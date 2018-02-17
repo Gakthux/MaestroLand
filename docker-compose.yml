@@ -5,13 +5,15 @@ app:
   links:
    - neo4j
   ports:
-   - "13000:3000"
+   - "3000:3000"
   working_dir: /app
-  entrypoint: node app.js
+  entrypoint: node server.js
 
 neo4j:
   image: neo4j:3.3
   ports:
-   - "17474:7474"
+   - "7473:7473"
+   - "7474:7474"
+   - "7687:7687"
   volumes:
    - ./db/dbms:/data/dbms

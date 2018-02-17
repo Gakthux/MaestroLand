@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 
 import { v1 as neo4j } from 'neo4j-driver';
 
-const driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "test"));
+const driver = neo4j.driver("bolt://neo4j", neo4j.auth.basic("neo4j", "test"));
 const session = driver.session();
 const API_PORT = 3000;
 
@@ -21,7 +21,7 @@ const formatJSON = (body) => {
   })
 }
 
-app.use('/', express.static(__dirname + '/view'));
+// app.use('/', express.static(__dirname + '/view'));
 app.use(bodyParser.urlencoded({
   extended: true
 }));
