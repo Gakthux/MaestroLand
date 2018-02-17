@@ -1,37 +1,67 @@
-var express = require('express');
-var app = express();
+import express from 'express';
+import bodyParser from 'body-parser';
 
-var neo4j = require('node-neo4j');
-var db = new neo4j('http://neo4j:test@neo4j:7474');
+import { v1 as neo4j } from 'neo4j-driver';
+
+const driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "test"));
+const session = driver.session();
+const API_PORT = 3000;
+
+const app = express();
+
+const fillQueryFromBody = (body) => {
+  return Object.keys(body).map((key, index) => {
+    return `${key}: $${key}`;
+  })
+}
+
+const formatJSON = (body) => {
+  return Object.keys(body).map((key, index) => {
+    return `${key}: '${body[key]}'`;
+  })
+}
 
 app.use('/', express.static(__dirname + '/view'));
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+app.use(bodyParser.json());
 
-app.get('/tools/load', function (req, res, next) {
-    db.insertNode({
-        name: 'Darth Vader #' + parseInt(Math.random() * 100),
-        sex: 'male'
-    }, ['Person'], function (err, node) {
-        if (err) return next(err);
-
-        res.json(node);
-    });
+app.post('/person', (req, res, next) => {
+  const resultPromise = session.run(`CREATE (p:Person {${fillQueryFromBody(req.body)}}) RETURN p`, req.body);
+  resultPromise
+    .then(result => res.json(result))
+    .catch(err => console.log('err -> ', err))
 });
 
-app.get('/tools/drop', function (req, res, next) {
-    db.cypherQuery("MATCH (n) DETACH DELETE n", function (err, result) {
-        if (err) return next(err);
-        res.json(result);
-    });
+app.post('/skill', (req, res, next) => {
+  const resultPromise = session.run(`CREATE (s:Skill {${fillQueryFromBody(req.body)}}) RETURN s`, req.body);
+  resultPromise
+    .then(result => res.json(result))
+    .catch(err => console.log('err -> ', err))
 });
 
-app.get('/persons', function (req, res, next) {
-    db.cypherQuery("MATCH (person:Person) RETURN person", function (err, result) {
-        if (err) return next(err);
-        res.json(result.data);
-    });
+app.post('/person/addSkill/:firstname/:skillName', (req, res, next) => {
+  const resultPromise = session.run(`MATCH (p:Person {firstname: '${req.params.firstname}'}), (s:Skill {name: '${req.params.skillName}'}) CREATE (p)-[:HAS_SKILL]->(s)`);
+  resultPromise
+    .then(result => res.json(result))
+    .catch(err => console.log('err -> ', err))
 });
 
-
-app.listen(3000, function () {
-    console.log('started');
+app.delete('/all', (req, res, next) => {
+  const resultPromise = session.run('MATCH (n) DETACH DELETE n');
+  resultPromise
+    .then(result => res.json(result))
+    .catch(err => console.log('err -> ', err))
 });
+
+app.listen(API_PORT, function () {
+    console.log(`Server started on port: ${API_PORT}`);
+});
+
+// const onExit = () => {
+//   session.close();
+//   driver.close();
+// }
+//
+// process.on('SIGINT', onExit);

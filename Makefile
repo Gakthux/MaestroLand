@@ -27,4 +27,3 @@ up:
 ## docker aliases
 ps:
 	docker-compose ps
-

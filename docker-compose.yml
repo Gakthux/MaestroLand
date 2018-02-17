@@ -10,7 +10,7 @@ app:
   entrypoint: node app.js
 
 neo4j:
-  image: neo4j:3.0
+  image: neo4j:3.3
   ports:
    - "17474:7474"
   volumes:
